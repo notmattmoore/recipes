@@ -1,0 +1,1344 @@
+% Notes
+% - Local snippets in ./snips:
+%   - (\)chap(tertoc)
+%   - (\)rec(ipe)
+%   - (\)ere(cipe)
+% - Custom Commands:
+%   - \chapterrec              - usual chapter meant to have a fore-text
+%   - \chaptertoc              - chapter with table of contents
+%   - \recipe                  - custom section command
+%   - \erecipe{title}{source}  - external recipe, adds ToC entry
+%   - \itemNL                  - item without label
+%   - \namepageref[<s>]{label} - "<name><s><pg>" sep defaults to " on page "
+%   - \degF, \about            - cooking shorthand
+% - Custom Environments:
+%   - ingredients, timeline, directions, directions1col [<alt title>]
+%   - IT (ingredients/timeline in 2 column) [<col ratio>]
+%   - twocols
+%   - ingredientslist, timelinelist, directionslist, recipelist [enumitem options]
+% - How to use the index:
+%   - \index{simple entry}
+%   - \index{category!entry}          - category,\\  entry
+%   - \index{entry!|see{other entry}} - entry ... /see/ other entry
+%
+% TODO:
+% - 
+
+\documentclass[oneside]{book}  % {{{1
+\usepackage{lmodern, microtype}              % margins, fonts, etc
+\usepackage[T1]{fontenc}                     % ""
+\usepackage{calc, etoolbox, nameref, xspace} % utilities
+\usepackage{booktabs, enumitem}              % typesetting
+\usepackage{datetime2}                       % use YYYY-MM-DD for \today
+\usepackage{hyperref}                        % pdf links
+
+% spacing
+\usepackage[margin=1in]{geometry}
+\setlength{\parskip}{0.5em}
+
+\usepackage{chappg}  % page numbering by chapter: <chapter #>-<page #>
+
+% headers and footers
+\usepackage{fancyhdr}
+\fancypagestyle{plain}{  % redefine the plain pagestyle
+  % Clear all headers and footers, show the date at the top right, and show
+  % chapter name, recipe name, and page number on the bottom of the page.
+  \fancyhf{}
+  \fancyhead[R]{\scriptsize\today}
+  \fancyfoot[L]{\leftmark\thisrecipe} \fancyfoot[R]{\thepage}
+  % double-sided
+  % \fancyhead[RE]{\scriptsize\today}
+  % \fancyfoot[LE]{\leftmark\thisrecipe} \fancyfoot[RE]{\thepage}
+  % \fancyhead[LO]{\scriptsize\today}
+  % \fancyfoot[LO]{\thepage}             \fancyfoot[RO]{\leftmark\thisrecipe}
+}
+\renewcommand{\headrulewidth}{0em}               % remove header rule
+\renewcommand{\chaptermark}[1]{\markboth{#1}{}}  % don't show chapter number
+\pagestyle{plain}
+
+% chapters, sections, etc, and ToC (NB: displaying numbers is disabled)
+\usepackage{titlesec, titletoc}
+\titleformat{\chapter}[display]{\normalfont\bf\Huge}{}{0em}{}
+\titlespacing{\chapter}{0em}{-6em}{0em}
+\titleformat{\section}{\normalfont\bf\Large}{}{0em}{}[\titlerule]
+\pretocmd{\section}{\clearpage}{}{}  % start sections on a new page
+\titleformat{\subsection}{\normalfont\bf\large}{}{0em}{}
+\titlespacing{\subsection}{0em}{\parskip}{0em}
+\titlecontents{chapter}[0em]{\addvspace{1em}\bf}{}{}{~\titlerule*[0.5em]{·}~\contentspage}
+\titlecontents{section}[1.5em]{}{}{}{~\titlerule*[0.5em]{·}~\contentspage}
+% chapter ToCs: style the sections the same as the chapters (styled above)
+\titlecontents{chapter_toc_section}[0em]{\addvspace{1em}\bf}{}{}{~\titlerule*[0.5em]{·}~\contentspage}
+% ugly hack: footer normal case, consistent spacing with chapter titles
+\renewcommand{\contentsname}{\vspace{1.25em}\NoCaseChange{Contents}}
+\setcounter{tocdepth}{1}  % don't show subsections and below in ToC
+
+% custom commands for chapters of recipes and recipes
+\def\thisrecipe{}  % initialization
+\newcommand{\chapterrec}[1]{  % recipe chapter
+  \newpage \def\thisrecipe{} \chapter{#1} \vspace{1.1em}
+}
+\newcommand{\chaptertoc}[1]{  % recipe chapter with table of contents
+  \chapterrec{#1} \vspace{-1.1em}  % make spacing consistent
+  \startcontents[chapters] \printcontents[chapters]{chapter_toc_}{1}[1]{}
+}
+\newcommand{\recipe}[1]{\section{#1}\def\thisrecipe{: #1}} % recipe section
+\usepackage{xcolor}  % for \colorbox below
+\NewDocumentCommand{\ExternalToCEntry}{mm}{\addtocontents{toc}{\protecting{%
+  \contentsline{section}
+  {\numberline{}#1}
+  {\hspace{-\linewidth}\colorbox{white}{#2}\hspace{-0.3em}}  % \colorbox and negative \hspace are hacks to prevent overfull hboxes and the \dotfill from going through the page number
+  {}
+} } }
+\NewDocumentCommand{\erecipe}{mm}{\ExternalToCEntry{#1}{#2}}  % external recipe
+
+% index
+\usepackage{imakeidx}
+\makeindex[
+  intoc,
+  % ugly hack: footer normal case, consistent spacing with chapter titles
+  title={\texorpdfstring{\vspace{1.25em}\NoCaseChange{Index}\vspace{0.4em}}{Index}},
+  options=-s my-index,
+]
+
+% lists
+\renewcommand*{\arraystretch}{1.25}
+\setlist[enumerate]{itemsep=0.5em}
+\setlist[itemize]{itemsep=0.5em}
+\setlist[description]{itemsep=0.5em}
+\newlist{kitchennotes}{description}{1}
+\setlist[kitchennotes]{style=nextline, font=\bfseries, leftmargin=\parindent}
+\newlist{kitchensubnoteslist}{itemize}{1}
+\setlist[kitchensubnoteslist]{
+  font=\bfseries, label=\textbullet, leftmargin=1em, itemsep=0em, topsep=0.5em
+}
+\NewDocumentEnvironment{kitchensubnotes}{o}
+  {
+    \phantom{.} \vspace{-2em}
+    \IfNoValueTF{#1}{\begin{kitchensubnoteslist}}{\begin{kitchensubnoteslist}[#1]}
+  }
+  {
+    \end{kitchensubnoteslist}
+  }
+\newlist{ingredientslist}{enumerate}{1}
+\newlist{timelinelist}{enumerate}{1}
+\newlist{directionslist}{enumerate}{1}
+\newlist{recipelist}{enumerate}{1}
+\SetEnumitemKey{recipelistStyle}{
+  label=\arabic*., font=\bfseries, wide=\parindent, parsep=\parskip,
+  topsep=\parskip, labelindent=\parindent,
+}
+\SetEnumitemKey{ITStyle}{itemsep=0em, label={}, leftmargin=*}
+\setlist[ingredientslist]{recipelistStyle, ITStyle}
+\setlist[timelinelist]{recipelistStyle, ITStyle}
+\setlist[directionslist]{recipelistStyle, itemsep=\parskip}
+\setlist[recipelist]{recipelistStyle}
+\newcommand{\itemNL}{\item[] \hspace{-\labelsep}}  % item with no label
+
+% custom commands
+\renewcommand{\epsilon}{\varepsilon}
+\renewcommand{\phi}{\varphi}
+\NewDocumentCommand{\todo}{o}{\textbf{ToDo\IfNoValueF{#1}{: #1}}}
+\NewDocumentCommand{\namepageref}{O{ on page }m}{\nameref{#2}#1\pageref{#2}}
+\newcommand{\degF}{\textdegree F\xspace}
+\newcommand{\about}{$\sim$}
+
+% custom environments
+\usepackage{multicol, paracol}  % multicolumn environments
+\setlength{\multicolsep}{\parskip}
+\NewDocumentEnvironment{twocols}{}  % shortcut for \begin{multicols}{2} ...
+  {\begin{multicols}{2}}{\end{multicols}}
+\NewDocumentEnvironment{IT}{O{0.844}}  %  [<col ratio>], ingredients/timeline
+  {\columnratio{#1} \begin{paracol}{2}}{\end{paracol}}
+\NewDocumentEnvironment{ingredients}{O{Ingredients}}
+  {\subsection{#1} \begin{ingredientslist}}
+  {\end{ingredientslist}}
+\NewDocumentEnvironment{timeline}{O{Timeline}}
+  {\subsection{#1} \begin{timelinelist}}
+  {\end{timelinelist}}
+\NewDocumentEnvironment{directions}{O{Directions}}
+  {
+    \vspace{-\parskip} \subsection{#1}
+    \begin{twocols} \begin{directionslist}
+  } {
+    \end{directionslist} \end{twocols}
+  }
+\NewDocumentEnvironment{directions1col}{O{Directions}}
+  {\subsection{#1} \begin{directionslist}}
+  {\end{directionslist}}
+
+% sources
+\NewDocumentCommand{\esource}{mo}{#1\IfNoValueF{#2}{ p#2}\xspace}
+\NewDocumentCommand{\CICookbook}{o}{\esource{CI Cookbook}[#1]}
+\NewDocumentCommand{\CIMeat}{o}{\esource{CI Meat Book}[#1]}
+\NewDocumentCommand{\CIBaking}{o}{\esource{CI Baking Book}[#1]}
+\NewDocumentCommand{\CIScience}{o}{\esource{CI Science}[#1]}
+\NewDocumentCommand{\InvIndianCooking}{o}{\esource{Inv.\ to Indian Cooking}[#1]}
+\NewDocumentCommand{\ATKThirty}{o}{\esource{ATK 30-min}[#1]}
+%----------------------------------------------------------------------------}}}1
+
+\begin{document}
+\frontmatter \pagenumbering[C]{bychapter} \tableofcontents
+
+\mainmatter
+
+\chapterrec{Notes} \label{chap:notes} % {{{1
+\begin{kitchennotes}[font=\MakeUppercase]
+  \item[Baking Sheets]
+    Use LEGO blocks to build spacers for stacking cookie sheets.
+
+  \item[Bulk Mixed Drinks]
+    Pre-mix the drink and put it in the freezer. Make a pitcher of ice water and
+    put it in the refrigerator. Work out correct ratio of drink to water (2:1 is
+    a good starting point). Combine at time of serving.
+
+  \item[Non-stick Pans]
+    Use vegetable oil spray (e.g.\ PAM) on a steel pan. The emulsifiers make the
+    pan essentially non-stick.
+
+  \item[Potatoes] \begin{kitchensubnotes}
+    \item Boursin cheese can be used to make mashed potatoes. Add a package, use
+      less butter, and use milk instead of cream.
+    \item Cut potatoes can be stored in water for up to one day.
+  \end{kitchensubnotes}
+\end{kitchennotes}
+%----------------------------------------------------------------------------}}}1
+
+\chapterrec{Sous Vide} \label{chap:sous_vide} % {{{1
+\index{sous vide}
+\begin{kitchennotes}
+  \item[Chicken, Poached]
+    \index{Poached Chicken} \index{sous vide!Poached Chicken} \index{chicken!Poached Chicken}
+    Cook at 150\degF for at least 2 hours.
+
+  \item[Eggs, Soft Boiled]
+    \index{Soft Boiled Eggs} \index{sous vide!Yogurt} \index{eggs!Soft Boiled}
+    Heat water to 190\degF and add eggs using spoon. Cook for 9--10 minutes,
+    then place in cold water bath.
+
+  \item[Yogurt]
+    \index{Yogurt} \index{sous vide!Yogurt}
+    Pasteurize the milk for 1 hour at 185\degF. Cool in a water bath to
+    115\degF, about 15 minutes. Add yogurt starter and cultivate at 115\degF
+    for 4 hours. Strain with colander and coffee filter for 3 hrs.
+\end{kitchennotes}
+%----------------------------------------------------------------------------}}}1
+
+\chaptertoc{Appetizers} \label{chap:appetizers}
+\recipe{Beef Tartare} \label{recipe:beef_tartare} % {{{1
+\index{beef!Beef Tartare}
+
+\begin{IT}
+  \begin{ingredients}
+    \item[1/2 lb] beef sirloin or chuck
+    \item[2 Tbsp] olive oil
+    \item[1 Tbsp] whole grain mustard
+    \item[1 tsp] Dijon mustard
+    \item[1] shallot, diced
+    \item[1 Tbsp] capers, drained, rinsed, and diced
+    \item[1 tsp] Worcestershire sauce
+    \item[1 tsp] red wine vinegar
+    \item[1] egg yolk
+    \itemNL salt and pepper, to taste
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:20
+    \item[Cook:]  00:00
+    \item[Total:] 00:20
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Place the meat grinder, serving bowl, and beef in freezer for 15
+    minutes.
+  \item Combine all ingredients except the beef. Grind beef and combine. Serve
+    in frozen serving bowl.
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+
+\chaptertoc{Dinners (with leftovers)} \label{chap:dinners_with_leftovers}
+\erecipe{Bolognese Sauce}{\CICookbook[193]} % {{{1
+\index{Bolognese Sauce|see{\CICookbook[193]}}
+\index{pasta!Bolognese Sauce|see{\CICookbook[193]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Brisket}{\CIMeat[127]} % {{{1
+\index{Brisket|see{\CIMeat[127]}}
+\index{beef!Brisket|see{\CIMeat[127]}}
+%---------------------------------------------------------------------------}}}1
+\recipe{Chili} \label{recipe:chili} % {{{1
+\index{Chili}
+\index{beef!Chili}
+
+\begin{IT}
+  \begin{ingredients}
+    \item[2] onion, diced
+    \itemNL spicy peppers, diced
+    \item[2 lbs] ground beef
+    \item[2 Tbsp] cumin
+    \item[1 Tbsp] chili powder
+    \item[4 cans] green chilies
+    \item[4 cans] kidney beans
+    \item[2 can] black beans
+    \item[4 cans] diced tomatoes
+    \item[1 can] tomato sauce
+    \item[1 bag] frozen corn
+    \itemNL salt and pepper, to taste
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:30
+    \item[Cook:]  3:30
+    \item[Total:] 4:00
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Saute the onions. Once onion is softened, cook diced chilies and spices
+    for \about 1 minute. Brown the ground beef.
+
+  \item Combine all remaining ingredients except corn and black beans in large
+    pot. Bring to boil, then reduce heat to bare simmer. Cook for 2--3 hours.
+
+  \columnbreak
+
+  \item In final hour of cooking, add black beans and corn.
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Meatloaf}{\CICookbook[391]} % {{{1
+\index{Meatloaf|see{\CICookbook[391]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Pulled Pork}{\CIMeat[244]} % {{{1
+\index{Pulled Pork|see{\CIMeat[244]}}
+\index{pork!Pulled Pork|see{\CIMeat[244]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Pork Roast}{\textit{see} \namepageref[ ]{notes:dinners_leftovers}}
+\erecipe{Pulled Pork}{\CIMeat[244]} % {{{1
+\index{Pulled Pork|see{\CIMeat[244]}}
+\index{pork!Pulled Pork|see{\CIMeat[244]}}
+%---------------------------------------------------------------------------}}}1
+\recipe{Punjabi Meat Curry} \label{recipe:punjabi_meat_curry} % {{{1
+\index{Punjabi Meat Curry}
+\index{curry!Punjabi Meat Curry}
+\index{beef!Punjabi Meat Curry}
+\index{goat!Punjabi Meat Curry}
+
+\begin{IT}
+  \begin{ingredients}
+    \item[5 lbs] red meat (e.g.\ goat or beef)
+    \item[1/2 cup] olive oil
+    \item[1 tsp] cumin seeds
+    \item[2] green cardamom seeds, crushed
+    \item[1] bay leaf
+    \item[3] yellow onions, minced finely
+    \item[3 Tbsp] ginger, chopped
+    \item[6] cloves garlic, minced
+    \item[4] chili peppers (e.g.\ Serrano)
+    \item[3] Carolina reaper peppers
+    \item[2 tsp] paprika powder
+    \item[1 Tbsp] turmeric powder
+    \item[1 Tbsp] chili powder
+    \item[1 Tbsp] coriander powder
+    \item[3 cans] tomato sauce (1 large can, 1 smaller)
+    \item[8--10 cups] chicken broth or water
+    \item[2 tsp] garam masala
+    \itemNL cilantro
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:30
+    \item[Cook:]  3:00
+    \item[Total:] 3:30
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Heat oil in a pot over medium high heat until shimmering. Add the cumin
+    seeds, cardamom and bay leaf and saute for 1 minute, stirring to prevent the
+    spices from burning. Add the onion and saute until the onion begins to turn
+    light brown. Add the ginger, garlic and chilies, stirring to prevent
+    burning, and cook 2 to 3 minutes. Add the meat and cook until all sides are
+    browned, 10 to 15 minutes.
+
+  \item Add the paprika, turmeric, red chili powder, and coriander powder. Stir
+    well and then add the tomato sauce. Stir and add the water. Increase the
+    heat to high and bring the curry to a boil. Reduce the heat to medium-low
+    and continue to simmer until the meat is tender.
+
+  \columnbreak
+
+  \item Once the meat is tender and the liquid has reduced, add garam masala.
+    Garnish with chopped cilantro leaves and serve.
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Red Beans and Rice}{\CICookbook[239]} % {{{1
+\index{Red Beans and Rice|see{\CICookbook[239]}}
+\index{beans!Red Beans and Rice|see{\CICookbook[239]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Roast Leg of Lamb}{\textit{see} \namepageref[ ]{notes:dinners_leftovers}}
+\erecipe{Smothered Pork Chops}{\CIMeat[203]} % {{{1
+\index{Smothered Pork Chops|see{\CIMeat[203]}}
+\index{pork!Smothered Pork Chops|see{\CIMeat[203]}}
+%---------------------------------------------------------------------------}}}1
+\recipe{Sopa Seca de Fideos} \label{recipe:sopa_seca_de_fideos} % {{{1
+\index{Sopa Seca de Fideos}
+
+\begin{IT}
+  \begin{ingredients}
+    \item[5 lbs] tomatoes
+    \item[8] garlic cloves, unpeeled
+    \item[12 oz] chorizo sausage
+    \item[20 oz] fideo noodles
+    \item[2 cans] chilies in adobo
+    \item[2] Carolina reaper peppers
+    \item[2 tsp] dried oregano
+    \item[1 tsp] black pepper
+    \item[2 cups] beef broth
+    \item[4] zucchini, diced
+    \item[1/2 cup] queso anejo or Parmesan, finely grated 
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  01:00
+    \item[Cook:]  00:30
+    \item[Total:] 01:30
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Roast unpeeled garlic on skillet, turning occasionally until soft, about
+    15 minutes.
+
+  \item Broil 3 lbs of the tomatoes on baking sheet \about 4 inches below boiler
+    until blackened on one side, about 6 minutes. Flip and broil until other
+    side is blackened. Cool and peel.
+
+  \item Brown chorizo in large pot and set aside.
+
+  \item Pour 6 Tbsp of oil into skillet and heat. When quite hot, place nests in
+    oil and fry until browned, about 1 minute. Flip and brown the other side.
+    Transfer to a paper towel lined tray and repeat (adding additional oil)
+    until all nests are browned.
+
+  \item Core and dice the remaining 2 lbs tomatoes. Dice the zucchini.
+
+  \item Process broiled tomatoes (incl.\ collected juices), garlic, and chilies
+    until pureed.
+
+  \item Heat 1 Tbsp oil in large pot used for chorizo and add tomato puree. Add
+    salt and sear over high heat for 10 minutes. Add the broth, oregano, black
+    pepper, and diced tomatoes. Vigorously simmer for 10 minutes.
+
+  \item Add the noodles. After 2 minutes, pull the nests apart. Add the zucchini
+    and chorizo and cook an additional 2 minutes. Remove from heat and stir in
+    the cheese.
+  % \columnbreak
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+\recipe{Thanksgiving} \label{recipe:thanksgiving} % {{{1
+\index{Thanksgiving}
+\index{turkey!Thanksgiving}
+
+\subsection{Sides}
+\begin{twocols} \begin{ingredientslist}
+  \item mashed potatoes
+  \item sweet potato casserole
+  \item green beans or asparagus
+  \item biscuits
+  \item cranberry relish
+  \item pumpkin pie
+\end{ingredientslist} \end{twocols}
+
+\subsection{Notes}
+\begin{twocols} \begin{kitchennotes}
+  \item[Turkey] \begin{kitchensubnotes}
+    \item \todo[cf.\ \CICookbook[353] and \CIMeat[439]]
+    \item Brine the day before in the morning. Use 1.5 cup of salt. Dry out and
+      leave overnight in the refrigerator.
+    \item Roast at 275\degF using convection, rotating every hour. \todo[how
+      long?]
+  \end{kitchensubnotes}
+
+  \item[Gravy] \begin{kitchensubnotes}
+    \item 1.5 cups of fat \emph{should} be enough.
+    \item Use \todo[how much?] cups of broth or water.
+  \end{kitchensubnotes}
+
+  \item[Potatoes]
+  Cut potatoes can be left in water for up to 1 day.
+
+  \item[Dressing]
+  Corn bread should be cooked day prior in shallow tray.
+
+  \item[Sweet Potatoes]
+  Can be roasted the day prior in deep tray.
+
+  \item[Miscellaneous]
+    Dressing and sweet potatoes can be cooked at the same time.
+\end{kitchennotes} \end{twocols}
+%---------------------------------------------------------------------------}}}1
+\recipe{Notes} \label{notes:dinners_leftovers} % {{{1
+\begin{kitchennotes}
+  \item[Pork Roast] \index{Pork Roast} \index{pork!Pork Roast}
+    Use pork shoulder or pork butt. Score fat cap and use a rub from
+    \namepageref{recipe:rubs_for_roasts}. Roast at 325\degF convection for
+    \about 5 hours, until roast registers 190\degF. See also, \CICookbook[418].
+  \item[Leg of Lamb] \index{Leg of Lamb} \index{lamb!Leg of Lamb}
+    Score fat cap and use a rub from \namepageref{recipe:rubs_for_roasts}. Roast
+    at 325\degF convection until done --- 125\degF, about 1.5 hours. Rest of 15
+    minutes before carving.
+\end{kitchennotes}
+%---------------------------------------------------------------------------}}}1
+
+\chaptertoc{Dinners (standalone)} \label{chap:dinners_standalone}
+\erecipe{BBQ Chicken}{NA} % {{{1
+\index{BBQ Chicken}
+\index{chicken!BBQ Chicken}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Chicken Thighs}{NA} % {{{1
+\index{Chicken Thighs}
+\index{chicken!Chicken Thighs}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Crab Cakes}{\CICookbook[450]} % {{{1
+\index{Crab Cakes|see{\CICookbook[450]}}
+\index{crab!Crab Cakes|see{\CICookbook[450]}}
+%---------------------------------------------------------------------------}}}1
+\recipe{Curry Roasted Chicken Drumsticks} \label{recipe:curry_roasted_chicken_drumsticks} % {{{1
+\index{Curry Roasted Chicken Drumsticks}
+\index{chicken!Curry Roasted Chicken Drumsticks}
+
+\begin{IT}
+  \begin{ingredients}
+    \item[2.5 lbs] chicken drumsticks
+    \item[4 tsp] curry powder
+    \item[1 Tbsp] kosher salt
+    \item[1.25 tsp] ground cardamom
+    \item[1.25 tsp] brown sugar
+    \item[3/4 tsp] ground ginger
+    \item[3/4 tsp] ground nutmeg
+    \item[3/4 tsp] smoked paprika
+    \item[2 Tbsp + 1 tsp] warm water
+    \item[2 Tbsp + 1 tsp] olive oil
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:45
+    \item[Cook:]  1:00
+    \item[Total:] 1:45
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Adjust oven rack to upper-middle position and heat over to 350\degF.
+    Line rimmed baking sheet with aluminum foil and set wire rack in sheet.
+
+  \item Whisk curry powder, salt, cardamom, sugar, ginger, nutmeg, and paprika
+    together in small bowl. Add water and oil and stir. Let sit until thickened
+    into a paste, 2--3 minutes.
+
+  \item Pat drumsticks dry and brush spice slurry on all sides. Place skin side
+    up on wire rack.
+
+  \columnbreak
+
+  \item Roast until drumsticks register 180\degF, 45--50 minutes, rotating
+    sheet halfway through. Turn on broiler and continue to cook until drumsticks
+    are well-browned in spots, 2--3 minutes longer. Remove from oven and let
+    rest for 10 minutes.
+
+  \item Meanwhile, prepare the herbed yogurt sauce below.
+\end{directions}
+
+\smallskip
+
+\begin{twocols}
+  \begin{ingredients}[Herbed Yogurt Ingredients]
+    \item[1 cup] plain Greek yogurt
+    \item[1/2 cup] cilantro, minced
+    \item[3 Tbsp] lime juice (1--2 limes)
+    \item[2 Tbsp] water
+    \item[1/2 tsp] fresh ginger, grated
+    \item[1/2 tsp] honey
+  \end{ingredients}
+
+  \columnbreak
+
+  \begin{directions1col}[Herbed Yogurt Directions]
+  \item Whisk all ingredients in a bowl until smooth. If necessary, add up to 2
+    Tbsp additional water so that the sauce is pourable. Season with salt to
+    taste and refrigerate.
+  \end{directions1col}
+\end{twocols}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Fried Chicken}{\CIMeat[404]} % {{{1
+\index{Fried Chicken|see{\CIMeat[404]}}
+\index{chicken!Fried Chicken|see{\CIMeat[404]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Hot Dogs and Hamburgers}{\textit{see} \namepageref[ ]{notes:dinners_standalone}}
+\recipe{Indian Eggs} \label{recipe:indian_eggs} % {{{1
+\index{Indian Eggs}
+\index{eggs!Indian Eggs}
+
+\begin{IT}
+  \begin{ingredients}
+    \itemNL oil
+    \item[2 tsp] cumin seeds
+    \item[2 small] onions
+    \itemNL hot peppers
+    \item[3 in.\ piece] ginger
+    \item[6 cloves] garlic
+    \item[2 tsp] turmeric
+    \item[1/2 tsp] ground cumin
+    \item[2 tsp] chili powder
+    \item[1/2 tsp] black pepper
+    \item[5] eggs
+    \item[2] tomatoes (optional)
+    \itemNL red cabbage (optional)
+    \item[1/2 tsp] garam masala
+    \itemNL salt to taste
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  \todo
+    \item[Cook:]  \todo
+    \item[Total:] \todo
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Heat oil in a pot over medium high heat until shimmering. Add the cumin
+    seeds and saute for 2 minutes until the seeds change color, stirring to
+    prevent the spices from burning.
+  \item Reduce heat to medium and add the onion, sauteing until the onion begins
+    to turn light brown. Add the hot peppers, ginger, garlic, turmeric, ground
+    cumin, chili powder, and black pepper, stirring frequently to prevent
+    burning, and cook 2 to 3 minutes until quite fragrant.
+  % \columnbreak
+  \item Add the eggs and continue cooking until done. Off heat, add garam masala
+    and salt.
+\end{directions}
+
+\todo[When cooking eggs, try covering the pan.]
+
+\todo[Tomatoes and red cabbage?]
+%---------------------------------------------------------------------------}}}1
+\erecipe{Pan-Seared Salmon}{\CICookbook[443]} % {{{1
+\index{Pan-Seared Salmon|see{\CICookbook[443]}}
+\index{fish!Pan-Seared Salmon|see{\CICookbook[443]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Pan-Seared Shrimp}{\CICookbook[455]} % {{{1
+\index{Pan-Seared Shrimp|see{\CICookbook[455]}}
+\index{shrimp!Pan-Seared Shrimp|see{\CICookbook[455]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Red Sauce (for pasta)}{\ATKThirty[157]} % {{{1
+\index{Red Sauce (for pasta)|see{\ATKThirty[157]}}
+\index{pasta!Red Sauce (for pasta)|see{\ATKThirty[157]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Shrimp Scampi}{\CICookbook[455]} % {{{1
+\index{Shrimp Scampi|see{\CICookbook[455]}}
+\index{shrimp!Shrimp Scampi|see{\CICookbook[455]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Steak}{\textit{see} \namepageref[ ]{notes:dinners_standalone}}
+\erecipe{Tacos}{\textit{see} \namepageref[ ]{notes:dinners_standalone}}
+\recipe{Vietnamese Braised Chicken} \label{recipe:vietnamese_braised_chicken} % {{{1
+\index{Vietnamese Braised Chicken}
+\index{chicken!Vietnamese Braised Chicken}
+
+\begin{IT}
+  \begin{ingredients}
+    \item[2 lbs] chicken thighs, bone-in, skin-on
+    \item[3 inches] ginger, cut into matchsticks
+    \item[1] shallot, sliced thin
+    \item[2] garlic cloves, sliced thin
+    \itemNL hot peppers, to taste (e.g.\ 8), sliced thin
+    \item[4 tsp] sugar
+    \item[2 tsp] vegetable oil
+    \item[1/2 cups] coconut milk
+    \item[1 cup] chicken broth
+    \item[(or) 1.5 cups] coconut water (omit coconut milk and broth)
+    \item[2 Tbsp] fish sauce
+    \itemNL cilantro, coarsely chopped
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:30
+    \item[Cook:]  01:00
+    \item[Total:] 01:30
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Place chicken thighs skin-down on cutting board. Trim excess fat and
+    skin and de-bone. Keeping as much skin as possible, cut into 1.5 inch
+    pieces.
+
+  \item Scatter sugar evenly in bottom of medium saucepan. Add oil and do not
+    stir. Cook on medium-high heat without stirring until sugar becomes the
+    color of honey, 2--3 minutes. Reduce heat to medium-low, and cook until
+    bubbles form and sugar is the color of soy sauce, stirring frequently, about
+    1 minute.
+
+  \item Immediately add the ginger, shallot, and garlic and increase the heat to
+    medium-high. Cook, stirring frequently, until aromatic, about 30 seconds.
+    Add the chicken and cook, stirring frequently, until no longer pink. Add the
+    sliced peppers.
+
+  \columnbreak
+
+  \item Add the coconut milk broth mixture or coconut water and the fish sauce.
+    Bring to a boil, then reduce heat and simmer until reduced by half, 25--30
+    minutes. At this point, begin cooking the rice and prepping any other sides.
+
+  \item Off heat add chopped cilantro and soy sauce to taste.
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Vodka Cream Sauce (for pasta)}{\ATKThirty[160]} % {{{1
+\index{Vodka Cream Sauce (for pasta)|see{\ATKThirty[160]}}
+\index{pasta!Vodka Cream Sauce (for pasta)|see{\ATKThirty[160]}}
+%---------------------------------------------------------------------------}}}1
+\recipe{Notes} \label{notes:dinners_standalone} % {{{1
+\begin{kitchennotes}
+  \item[Hot Dogs and Hamburgers] \index{Hot Dogs and Hamburgers} \index{beef!Hamburgers}
+    For 1 lb of meat, use 1 packet of Lipton's French Onion Soup mix and 1 Tbsp
+    of Worcestershire sauce.
+  \item[Steak] \index{Steak} \index{beef!Steak}
+    Cook on high heat, turning every minute, for 5--6 minutes.
+  \item[Tacos] \index{Tacos} \index{beef!Tacos}
+    Get a seasoning with cornstarch or flour in it. 1 lb ground beef is enough
+    for 2-3 people.
+\end{kitchennotes}
+%---------------------------------------------------------------------------}}}1
+
+\chaptertoc{Sides} \label{chap:sides}
+\recipe{Apple Salad} \label{recipe:apple_salad} % {{{1
+\index{Apple Salad}
+\index{salad!Apple Salad}
+
+\begin{IT}
+  \begin{ingredients}
+  \item[6] apples, 3--4 granny smith, the rest sweet
+  \item[1/2 block]  cheddar cheese, sharp
+  \item[1 cup] raisins or craisins
+  \item[1 cup] walnuts or pecans, chopped
+  \item[4 stalks] celery
+  \item[3/4 large container] plain yogurt \todo[actually, how much?]
+  \item[2 Tbsp] brown sugar
+  \item[1/2] lemon, juiced
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:30
+    \item[Cook:]  N/A
+    \item[Total:] 00:30
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Cut all ingredients into bite-sized pieces. Leave apple skin on if
+    desired.
+  \item Prepare the dressing. Mix brown sugar with lemon juice until fully
+    dissolved, then add to yogurt. Taste using an apple cube and add additional
+    lemon or sugar if needed.
+
+  \columnbreak
+
+  \item Combine all ingredients.
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Banana Bread}{\CIBaking[27]} % {{{1
+\index{Banana Bread|see{\CIBaking[27]}}
+\index{bread!Banana Bread|see{\CIBaking[27]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Blueberry Muffins}{\CIBaking[39]} % {{{1
+\index{Blueberry Muffins|see{\CIBaking[39]}}
+\index{muffins!Blueberry Muffins|see{\CIBaking[39]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Coleslaw}{\CICookbook[57]} % {{{1
+\index{Coleslaw|see{\CICookbook[57]}}
+%---------------------------------------------------------------------------}}}1
+\recipe{Cranberry Relish} \label{recipe:cranberry_relish} % {{{1
+\index{Cranberry Relish}
+
+\begin{IT}[0.770]
+  \begin{ingredients}
+    \item[1/2 cup] sugar
+    \item[1] clementine, unpeeled, stemmed and quartered
+    \item[12 oz (3 cups)] frozen cranberries, thawed
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:10
+    \item[Cook:]  1:00 (chilling)
+    \item[Total:] 1:10
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Process sugar and clementine in food processor until clementine is finely
+    ground, scraping the bowl as needed, about 20 seconds.
+
+  \item Add cranberries and pulse until berries are chopped into pea-sized
+    pieces, about 15-20 pulses.
+
+  \columnbreak
+
+  \item Transfer to bowl and refrigerate for at least 1 hour, or up to 24 hours.
+    Stir to recombine.
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Cucumber Salad}{\CICookbook[45]} % {{{1
+\index{Cucumber Salad|see{\CICookbook[45]}}
+\index{salad!Cucumber Salad|see{\CICookbook[45]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Hummus}{\CICookbook[8]} % {{{1
+\index{Hummus|see{\CICookbook[8]}}
+%---------------------------------------------------------------------------}}}1
+%\recipe{Indian Carrots, Potatoes, Peas} \label{recipe:indian_carrots,_potatoes,_peas} % {{{1
+%\index{Indian Carrots, Potatoes, Peas}
+%\index{carrots!Indian Carrots, Potatoes, Peas}
+
+%\begin{IT}
+%  \begin{ingredients}
+%    \item \vspace{15em}
+%  \end{ingredients}
+
+%  \switchcolumn
+
+%  \begin{timeline}
+%    \item[Prep:]
+%    \item[Cook:]
+%    \item[Total:]
+%  \end{timeline}
+%\end{IT}
+
+%\begin{directions}
+%  \item 
+%  % \columnbreak
+%\end{directions}
+%%---------------------------------------------------------------------------}}}1
+%\recipe{Indian Cauliflower} \label{recipe:indian_cauliflower} % {{{1
+%\index{Indian Cauliflower}
+%\index{cauliflower!Indian Cauliflower}
+
+%\begin{IT}
+%  \begin{ingredients}
+%  \item \vspace{15em}
+%  \end{ingredients}
+
+%  \switchcolumn
+
+%  \begin{timeline}
+%    \item[Prep:]
+%    \item[Cook:]
+%    \item[Total:]
+%  \end{timeline}
+%\end{IT}
+
+%\begin{directions}
+%  \item
+%  % \columnbreak
+%\end{directions}
+%%---------------------------------------------------------------------------}}}1
+\recipe{Mashed Sweet Potatoes} \label{recipe:mashed_sweet_potatoes} % {{{1
+\index{Mashed Sweet Potatoes}
+\index{sweet potatoes!Mashed Sweet Potatoes}
+
+\begin{IT}
+  \begin{ingredients}
+    \item[2 lbs] sweet potatoes, peeled and cut into 1/2-inch pieces
+    \item[3 Tbsp] butter, cut into 1/2-inch pieces
+    \item[1/4 tsp] salt
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:05
+    \item[Cook:]  00:25
+    \item[Total:] 00:30
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Bring 6 cups of water to boil in large saucepan over high heat. Add
+    sweet potatoes, return to a boil, cover, reduce heat to medium-low to
+    simmer, and cook until fork pierces potatoes with little resistance, about
+    12 minutes.
+
+  \item Drain potatoes and cook over medium heat, stirring frequently, for 7
+    minutes, adjusting heat to prevent excessive browning (steam should be
+    steadily escaping).
+
+  \columnbreak
+
+  \item Off heat, add butter and salt. Whisk until butter is fully incorporated.
+    Season with salt to taste.
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Indian Green Beans with Mustard}{\InvIndianCooking[152]} % {{{1
+\index{Indian Green Beans with Mustard|see{\InvIndianCooking[152]}}
+\index{green beans!Indian Green Beans with Mustard|see{\InvIndianCooking[152]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Potato Salad}{\CICookbook[59]} % {{{1
+\index{Potato Salad|see{\CICookbook[59]}}
+\index{salad!Potato Salad|see{\CICookbook[59]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Rice Pilaf}{\CICookbook[222]} % {{{1
+\index{Rice Pilaf|see{\CICookbook[222]}}
+\index{rice!Rice Pilaf|see{\CICookbook[222]}}
+%---------------------------------------------------------------------------}}}1
+
+\chaptertoc{Breakfast} \label{chap:breakfast}
+\erecipe{French Toast}{\CICookbook[551]} % {{{1
+\index{French Toast|see{\CICookbook[551]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Lemon Blueberry Pancakes}{\CIBaking[87]} % {{{1
+\index{Lemon Blueberry Pancakes|see{\CIBaking[87]}}
+\index{pancakes!Lemon Blueberry Pancakes|see{\CIBaking[87]}}
+%---------------------------------------------------------------------------}}}1
+
+\chaptertoc{Baked Goods} \label{chap:baked_goods}
+\erecipe{Apple Pie}{\CICookbook[713]} % {{{1
+\index{Apple Pie|see{\CICookbook[713]}}
+\index{pie!Apple Pie|see{\CICookbook[713]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Angel Food Cake}{\CIBaking[270]} % {{{1
+\index{Angel Food Cake|see{\CIBaking[270]}}
+\index{cake!Angel Food Cake|see{\CIBaking[270]}}
+%---------------------------------------------------------------------------}}}1
+\recipe{Baking Powder Biscuits} \label{recipe:baking_powder_biscuits} % {{{1
+\index{Baking Powder Biscuits}
+\index{biscuits!Baking Powder Biscuits}
+
+\begin{IT}
+  \begin{ingredients}[Ingredients (yields 4 biscuits)]
+    \item[180 g] flour
+    \item[1/2 tsp] salt
+    \item[1/2 Tbsp] baking powder
+    \item[1/2 Tbsp] sugar
+    \item[3 Tbsp] butter, \textbf{room temperature}
+    \item[118 g] milk
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:20
+    \item[Cook:]  00:20
+    \item[Total:] 00:40
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Preheat oven to 425\degF.
+
+  \item Mix flour, salt, baking powder, and sugar in food processor.
+
+  \item Add butter to processor and process until mixture has a sandy
+    consistency.
+
+  \item Slowly add milk to running processor until a cohesive dough forms. If
+    dough seems dry, add additional milk.
+
+  \columnbreak
+
+  \item Roll out the dough on a floured work surface with floured rolling pin,
+    folding and rolling repeatedly. Form dough into 3/4 inch disc.
+
+  \item Cut dough into biscuits and place biscuits onto baking sheet. Brush tops
+    of biscuits with milk, and place in oven for 15--20 minutes until lightly
+    browned.
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+\recipe{Banana Chocolate Chip Muffins} \label{recipe:banana_chocolate_chip_muffins} % {{{1
+\index{Banana Chocolate Chip Muffins}
+\index{muffins!Banana Chocolate Chip Muffins}
+
+\begin{IT}
+  \begin{ingredients}
+    \item[8 Tbsp] butter, room temperature
+    \item[87 g] sugar
+    \item[2] ripe bananas
+    \item[1] egg
+    \item[1 tsp] vanilla
+    \item[1/3 cup] milk
+    \item[1 cup] all purpose flour
+    \item[1.5 tsp] baking powder
+    \item[1/2 tsp] baking soda
+    \item[1/2 tsp] cinnamon
+    \item[1/2 tsp] salt
+    \item[1/2 cup] bittersweet chocolate chips
+    \item[1/2 cup] cacao nibs
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:10
+    \item[Cook:]  00:20
+    \item[Total:] 00:30
+  \end{timeline}
+\end{IT}
+
+\begin{directions}
+  \item Preheat oven to 350\degF.
+  \item Beat together butter and sugar until smooth.
+  \item Beat in the bananas, egg, vanilla, and milk.
+  \item Add flour, baking powder, baking soda, cinnamon, and salt and beat until
+    smooth.
+
+  \columnbreak
+
+  \item Add chocolate chips and cacao nibs, stirring until combined.
+  \item Heap batter into muffin tray and bake for 20--24 minutes, rotating
+    halfway.
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Carrot Cake}{\CIBaking[313]} % {{{1
+\index{Carrot Cake|see{\CIBaking[313]}}
+\index{cake!Carrot Cake|see{\CIBaking[313]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Chocolate Layer Cake}{\CIBaking[299]} % {{{1
+\index{Chocolate Layer Cake|see{\CIBaking[299]}}
+\index{cake!Chocolate Layer Cake|see{\CIBaking[299]}}
+%---------------------------------------------------------------------------}}}1
+\recipe{French Country Bread} \label{recipe:french_country_bread} % {{{1
+\index{French Country Bread}
+\index{bread!French Country Bread}
+
+\begin{timeline}
+  \item[Prep:]  00:05 (biga) + 00:30 (bread)
+  \item[Cook:]  00:40
+  \item[Total:] (2:00--16:00 biga) + (00:30 prep) + (1:15--3:30 rise/proof)
+    + (00:40 cook) = 5:25--20:40
+\end{timeline}
+
+\smallskip
+
+\begin{twocols}
+  \begin{ingredients}[Biga Ingredients]
+    \item[150 g] bread flour
+    \item[30 g] whole wheat flour
+    \item[1/2 tsp] instant yeast \textbf{or} active dry yeast
+    \item[1 cup] water, 90--100\degF
+  \end{ingredients}
+
+  \columnbreak
+
+  \begin{ingredients}[Bread Ingredients]
+    \item[533 g] bread flour
+    \item[18 g] sugar
+    \item[1 Tbsp] salt
+    \item[2/3 tsp] instant yeast or \textbf{1 tsp} active dry yeast
+    \item[1 cup] water, 105--115\degF
+  \end{ingredients}
+\end{twocols}
+
+\begin{directions}
+  \item Combine all biga ingredients, proofing the yeast in the water before
+  adding it. Cover with plastic wrap and let rest 2--16 hours (longer is
+  better).
+
+  \item Stir down the biga and combine with the bread ingredients, once again
+  proofing the yeast in the water before adding it. Stir until roughly
+  incorporated, then let rest 15 minutes.
+
+  \item After resting, knead the dough, adding enough flour for it to form a
+  soft dough. Knead for 10 minutes.
+
+  \item Let the dough rise in a lightly greased covered container until doubled
+  in size, 45 minutes to 2 hours.
+
+  \columnbreak
+
+  \item Remove the dough from the container and gently form it into a round by
+  flouring the counter and shaping it. Transfer to a lightly floured or
+  cornmealed cloche or baking sheet. Cover and proof until 50\% larger, 30--90
+  minutes. Preheat oven to 450\degF.
+
+  \item Score the top of the bread and dust with flour. Bake at 450\degF for 35
+  minutes in a covered cloche, then remove the cover and bake for an additional
+  5. If using a baking sheet then bake for 40 minutes. Remove from oven and let
+  cool on a rack.
+\end{directions}
+%----------------------------------------------------------------------------}}}1
+\erecipe{Gingerbread Cake}{\CIBaking[264]} % {{{1
+\index{Gingerbread Cake|see{\CIBaking[264]}}
+\index{cake!Gingerbread Cake|see{\CIBaking[264]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Gingerbread Cookies}{\CICookbook[642]} % {{{1
+\index{Gingerbread Cookies|see{\CICookbook[642]}}
+\index{cookies!Gingerbread Cookies|see{\CICookbook[642]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Pumpkin Pie}{\CICookbook[720]} % {{{1
+\index{Pumpkin Pie|see{\CICookbook[720]}}
+\index{pie!Pumpkin Pie|see{\CICookbook[720]}}
+%---------------------------------------------------------------------------}}}1
+\recipe{Savory Dutch Baby} \label{recipe:savory_dutch_baby} % {{{1
+\index{Savory Dutch Baby}
+\index{dutch baby, savory}
+\begin{IT}[0.727]
+  \begin{ingredients}[Dutch Baby Ingredients]
+    \item[1.75 cups (8.76 oz)] all-purpose flour
+    \item[1 Tbsp] sugar
+    \item[1/2 tsp] salt
+    \item[1.5 cups] milk
+    \item[6] eggs
+    \item[3 Tbsp] butter
+  \end{ingredients}
+
+  \switchcolumn
+
+  \begin{timeline}
+    \item[Prep:]  00:20 (dutch baby) + 00:20 (topping)
+    \item[Cook:]  00:35
+    \item[Total:] 00:55
+  \end{timeline}
+\end{IT}
+
+\begin{directions}[Dutch Baby Directions]
+  \item Whisk flour, sugar, and salt together in large bowl. Whisk milk and eggs
+    together in a second bowl. Whisk 2/3 of milk mixture into flour mixture
+    until no clumps remain, then slowly whisk in remaining milk mixture until
+    smooth.
+
+  \item Adjust oven rack to lower-middle position. Melt butter in 12-inch
+    nonstick skillet (or use cooking oil spray in traditional skillet) over
+    medium-low heat. Add batter and transfer to cold oven. Set oven to 375\degF
+    and bake until edges are deep golden brown and center is beginning to brown,
+    30--35 minutes.
+
+  \item While baking, prepare the topping (see below).
+
+  \item Gently transfer to cutting board and let cool for at least 5 minutes
+    before topping.
+\end{directions}
+
+\smallskip
+
+\begin{twocols}
+  \begin{ingredients}[Lox and Cucumber Ingredients]
+    \item[1] shallot, small
+    \item[1/4 tsp + 1/4 tsp] salt, divided
+    \item[1/2 cup] sour cream
+    \item[1 Tbsp] capers, plus \textbf{1 Tbsp} brine
+    \item[1.5 tsp + 1.5 tsp] fresh dill, chopped, divided
+    \item[1] English cucumber
+    \item[8 oz] smoked salmon
+  \end{ingredients}
+
+  \begin{directions1col}[Lox and Cucumber Directions]
+    \item Combine 1/2 cup water, shallot, and 1/4 tsp salt in a bowl and let sit
+      for 5 minutes. Drain and discard liquid, setting shallot aside. Combine sour
+      cream, caper brine, 1.5 tsp dill, and 1/4 tsp salt in a bowl.
+    \item Shave cucumber using vegetable peeler lengthwise into ribbons until
+      hitting seeds. Rotate 180\textdegree\ and repeat. Discard core.
+    \item Spread sour cream mixture over Dutch Baby. Arrange salmon, then scatter
+      cucumber ribbons, then sprinkle with shallot, capers, and 1.5 tsp dill.
+  \end{directions1col}
+
+  \columnbreak
+
+  \begin{ingredients}[Mushroom and Red Pepper Ingredients]
+    \item[2 Tbsp + 1 Tbsp] olive oil, divided
+    \item[1.25 lbs] Portobello mushroom caps, gills removed, sliced thin
+    \item[1/2 tsp + 1/4 tsp] salt, divided
+    \item[1/2 tsp] lemon zest plus \textbf{2 tsp} lemon juice
+    \item[1/4 tsp] sugar
+    \item[1/2 cup] chopped roasted red peppers
+    \item[2 oz] feta cheese, cut into 1/4 inch cubes
+    \item[1/2 cup] parsley
+    \item[1/4 cup] walnuts, chopped
+  \end{ingredients}
+
+  \begin{directions1col}[Mushroom and Red Pepper Directions]
+    \item Heat 1 Tbsp oil in 12-inch pan over medium-high heat. Add mushrooms
+      and 1/2 tsp salt and cook, stirring frequently, until tender, 4--6
+      minutes.
+    \item Whisk lemon zest, juice, sugar, and 1/4 tsp salt. Whisking constantly,
+      slowly add 2 Tbsp olive oil. Add red peppers, feta, and parsley and
+      combine.
+    \item Spread mushrooms over Dutch Baby, followed by red pepper mixture and
+      walnuts.
+  \end{directions1col}
+\end{twocols}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Tiramis\`u}{\CICookbook[700]} % {{{1
+\index{Tiramis\`u|see{\CICookbook[700]}}
+\index{cake!Tiramis\`u|see{\CICookbook[700]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Tripe-Chocolate Mousse Cake}{\CIBaking[322]} % {{{1
+\index{Tripe-Chocolate Mousse Cake|see{\CIBaking[322]}}
+\index{cake!Tripe-Chocolate Mousse Cake|see{\CIBaking[322]}}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Ultimate Chocolate Chip Cookies}{\CIScience[415]} % {{{1
+\index{Ultimate Chocolate Chip Cookies|see{\CIScience[415]}}
+\index{cookies!Ultimate Chocolate Chip Cookies|see{\CIScience[415]}}
+%---------------------------------------------------------------------------}}}1
+
+\chaptertoc{Miscellaneous} \label{chap:miscellaneous}
+\recipe{Blackened Seasoning} \label{recipe:blackened_seasoning} % {{{1
+\index{Blackened Seasoning}
+\index{fish!Blackened Seasoning for}
+
+\begin{ingredients}
+  \item[2 Tbsp] paprika
+  \item[1 Tbsp] cayenne
+  \item[1 Tbsp] onion powder
+  \item[1 tsp] garlic powder
+  \item[1 tsp] black pepper
+  \item[1 tsp] salt
+  \item[1/2 tsp] dried basil
+  \item[1/2 tsp] dried oregano
+  \item[1/2 tsp] dried thyme
+\end{ingredients}
+
+\begin{directions}
+  \item Mix all ingredients.
+\end{directions}
+%---------------------------------------------------------------------------}}}1
+\recipe{Pan Sauces} \label{recipe:pan_sauces} % {{{1
+\index{sauces, pan}
+
+\begin{directions}[General Directions]
+  \item After saut\'eing meat, tent loosely with foil. Add oil or butter to the
+    pan if necessary and saut\'e the aromatics, no more than a couple minutes
+    so as not to burn the fond, making it bitter.
+
+  \item Add flour, if using, stirring constantly, for 30 seconds.
+
+  \item Add final aromatics. Deglaze the pan with the liquids. If using wine,
+    add wine first and reduce, then add other liquids and reduce. Return juices
+    from tented meat to the pan.
+
+  \item Off heat, add acids and butter. Season with salt and pepper to taste.
+\end{directions}
+
+\noindent\textbf{Ingredient lists yield two large servings.}
+
+\begin{twocols}
+  \begin{ingredients}[Garlic Lemon Thyme]
+    \index{sauces, pan!Garlic Lemon Thyme}
+    \item[1] shallot, minced
+    \item[2] cloves garlic
+    \itemNL fresh thyme
+    \item[1 cup] chicken broth
+    \item[1/2] lemon, juiced
+    \item[1 Tbsp] butter
+  \end{ingredients}
+
+  \begin{ingredients}[Lemon Caper White Wine]
+    \index{sauces, pan!Lemon Caper White Wine}
+    \item[1] shallot, sliced thin
+    \item[1.5 tsp] capers, chopped
+    \item[1/2 cup] white wine or vermouth
+    \item[1/2 cup] chicken broth
+    \item[1/2] lemon, juiced
+    \item[1 Tbsp] butter
+  \end{ingredients}
+
+  \begin{ingredients}[Thyme Wine]
+  \index{sauces, pan!Thyme Wine}
+    \item[1] shallot, minced
+    \itemNL fresh thyme
+    \item[1/2 cup] wine (white \textbf{or} red)
+    \item[1/2 cup] chicken stock
+    \item[1 Tbsp] light brown sugar
+    \item[1 Tbsp] butter
+  \end{ingredients}
+
+  \columnbreak
+
+  \begin{ingredients}[Red Wine Rosemary]
+    \index{sauces, pan!Red Wine Rosemary}
+    \item[1] shallot, minced
+    \itemNL fresh rosemary, chopped
+    \item[1/2 cup] red wine
+    \item[1/2 cup] chicken \textbf{or} beef broth
+    \item[1 Tbsp] butter
+  \end{ingredients}
+
+  \begin{ingredients}[Red Wine Mushroom Thyme]
+    \index{sauces, pan!Red Wine Mushroom Thyme}
+    \item[4 oz] mushrooms, sliced thin (cook first, \about 5 min.)
+    \item[1/2] shallot, minced
+    \itemNL fresh thyme
+    \item[3/2 cup] red wine
+    \item[1/4 cup] chicken \textbf{or} beef broth
+    \item[1.5 tsp] balsamic vinegar
+    \item[1/2 tsp] Dijon mustard
+    \item[1 Tbsp] butter
+  \end{ingredients}
+
+  % \begin{ingredients}[<++>]
+  % \index{sauces, pan!}
+  %   \item[<++>] <++>
+  %   \item[<++>] <++>
+  % \end{ingredients}
+\end{twocols}
+%---------------------------------------------------------------------------}}}1
+\erecipe{Pesto}{\CICookbook[161]} % {{{1
+\index{Pesto|see{\CICookbook[161]}}
+\index{pasta!Pesto|see{\CICookbook[161]}}
+%---------------------------------------------------------------------------}}}1
+\recipe{Rubs for Roasts} \label{recipe:rubs_for_roasts} % {{{1
+\index{roasts, rubs for}
+
+\begin{twocols}
+  \begin{ingredients}[Garlic Rosemary Thyme Dijon]
+    \index{roasts, rubs for!Garlic, Rosemary, Thyme, Dijon}
+    \item[8] cloves garlic, minced
+    \item[2 Tbsp] olive oil
+    \item[2 Tbsp] fresh rosemary, chopped
+    \item[2 Tbsp] fresh thyme, chopped
+    \item[2 Tbsp] Dijon mustard
+    \item[1 Tbsp] kosher salt
+    \item[2 tsp]  black pepper
+  \end{ingredients}
+
+  \columnbreak
+
+  \begin{ingredients}[Roasted Garlic Parsley]
+    \index{roasts, rubs for!Roasted Garlic Parsley}
+    \item[2 heads] garlic, roasted
+    \item[2 Tbsp] parsley, minced
+    \itemNL salt and pepper (on roast, after rub)
+  \end{ingredients}
+
+  \begin{ingredients}[Salt and Sugar]
+    \index{roasts, rubs for!Salt and Sugar}
+    \item[1/3 cup] brown sugar
+    \item[1/3 cup] kosher salt
+  \end{ingredients}
+  \vspace{-0.75em} Rub, then cover the roast with plastic wrap and refrigerate
+  for 12--24 hours.
+
+  % \begin{ingredients}[<++>]
+  %   \index{roasts, rubs for!<++>}
+  %   \item[<++>] <++>
+  %   \item[<++>] <++>
+  % \end{ingredients}
+\end{twocols}
+%---------------------------------------------------------------------------}}}1
+
+\backmatter
+\def\thisrecipe{}  % clear recipe name
+\pagenumbering[I]{bychapter} \printindex
+\end{document}

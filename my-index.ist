@@ -1,0 +1,6 @@
+headings_flag 1
+heading_prefix "{\\large\\bfseries "
+heading_suffix "}\\nopagebreak\\\\[0.25em]"
+delim_0 "~\\titlerule*[0.5em]\{·\}~"
+delim_1 "~\\titlerule*[0.5em]\{·\}~"
+delim_2 "~\\titlerule*[0.5em]\{·\}~"
