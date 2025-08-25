@@ -146,7 +146,7 @@
 \usepackage{multicol, paracol}  % multicolumn environments
 \setlength{\multicolsep}{\parskip}
 \NewDocumentEnvironment{twocols}{}  % shortcut for \begin{multicols}{2} ...
-  {\begin{multicols}{2}}{\end{multicols}}
+  {\begin{multicols}{2} \raggedcolumns}{\end{multicols}}
 \NewDocumentEnvironment{IT}{O{0.844}}  %  [<col ratio>], ingredients/timeline
   {\columnratio{#1} \begin{paracol}{2}}{\end{paracol}}
 \NewDocumentEnvironment{ingredients}{O{Ingredients}}
