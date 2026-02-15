@@ -31,6 +31,7 @@
 \usepackage{booktabs, enumitem}              % typesetting
 \usepackage{datetime2}                       % use YYYY-MM-DD for \today
 \usepackage{hyperref}                        % pdf links
+\usepackage{amsmath}                         % misc math
 
 % spacing
 \usepackage[margin=1in]{geometry}
@@ -256,8 +257,8 @@
 \begin{directions}
   \item Place the meat grinder, serving bowl, and beef in freezer for 15
     minutes.
-  \item Combine all ingredients except the beef. Grind beef and combine. Serve
-    in frozen serving bowl.
+  \item Combine all ingredients except the beef in third smallest metal bowl.
+    Grind beef and combine. Serve in frozen serving bowl.
 \end{directions}
 %---------------------------------------------------------------------------}}}1
 \erecipe{Crab Cakes}{\CICookbook[450]} % {{{1
@@ -459,19 +460,21 @@
 \subsection{Sides}
 \begin{twocols} \begin{ingredientslist}
   \item apple salad (p\pageref{recipe:apple_salad})
-  \item biscuits (p\pageref{recipe:baking_powder_biscuits})
-  \item cranberry relish (p\pageref{recipe:cranberry_relish})
-  \item cornbread dressing
+  \item biscuits$^{\dagger \text{ (c.f.\ note)}}$ (p\pageref{recipe:baking_powder_biscuits})
+  \item cranberry relish$^\dagger$ (p\pageref{recipe:cranberry_relish})
+  \item cornbread dressing$^{\dagger \text{ (c.f.\ note)}}$
   \item green beans or asparagus
   \item mashed potatoes (p\pageref{recipe:mashed_potatoes})
-  \item pumpkin pie (\CICookbook[720])
-  \item sweet potato casserole (\todo)
+  \item pumpkin pie$^\dagger$ (\CICookbook[720])
+  \item sweet potato casserole$^{\dagger \text{ (c.f.\ note)}}$ (\todo)
+  \item butternut squash (p\pageref{recipe:butternut_squash})
 \end{ingredientslist} \end{twocols}
+\noindent $\dagger$: can be made a day prior
 
 \subsection{Notes}
 \begin{twocols} \begin{kitchennotes}
   \item[Turkey] \begin{kitchensubnotes}
-    \item Brine the day before in the morning. Use 1.5 cup of salt. Dry out and
+    \item Brine the day before in the morning. Use 1.5 cups of salt. Dry out and
       leave overnight in the refrigerator.
     \item \todo[slash the skin to produce more drippings?] Lift drumstick and
       cut 1 inch slit in skin where drumstick and thigh meet. Turn turkey on
@@ -491,7 +494,13 @@
   Can be roasted the day prior in deep tray.
 
   \item[Miscellaneous]
-  Dressing and sweet potatoes can be cooked at the same time.
+    \begin{kitchensubnotes}
+      \item Biscuits: dough can be made the day prior and refrigerated. Thaw for
+        \about 30 minutes prior to baking.
+      \item Dressing: cornbread can be made the day before
+      \item Dressing: cook for 00:45-1:00 at 375\degF
+      \item Dressing and sweet potatoes can be cooked at the same time.
+    \end{kitchensubnotes}
 \end{kitchennotes} \end{twocols}
 %---------------------------------------------------------------------------}}}1
 \erecipe{Vodka Cream Sauce (for pasta)}{\ATKThirty[160]} % {{{1
@@ -527,7 +536,7 @@
     \item[2 Tbsp] fish sauce
     \item[3] garlic cloves, grated
     \item[1.5 tsp] sugar
-    \item[1.25 tsp] kosher salt
+    \item[1 tsp] kosher salt
     \item[1 Tbsp] hot sauce
     \item[2 lbs] boneless skinless chicken thighs, cut into 1-inch pieces
   \end{ingredients}
@@ -712,6 +721,7 @@
     \item[2 Tbsp] fish sauce
     \item[1 Tbsp] cornstarch
     \itemNL cilantro, coarsely chopped
+    \item[1.5 cups] rice
   \end{ingredients}
 
   \switchcolumn
@@ -854,9 +864,9 @@
 \begin{IT}
   \begin{ingredients}
     \item[8 oz] pasta
-    \item[3/4 tsp] salt
     \item[1 lb] broccoli crowns, cut into bite-size pieces
     \item[1 can] cannellini beans
+    \item[3/4 tsp] salt
     \item[1/4 cup + 1/4 cup] jarred banana peppers
     \item[1/4 cup] banana pepper brine
     \item[1/4 cup + 1/4 cup] Castelvetrano olives, pitted
@@ -895,7 +905,7 @@
 
 \begin{IT}
   \begin{ingredients}
-    \item[1/3 cup] sugar \todo[consider 1/4 cup]
+    \item[1/4 cup] sugar
     \item[1] clementine, unpeeled, stemmed and quartered
     \item[12 oz (3 cups)] frozen cranberries, thawed
   \end{ingredients}
