@@ -25,19 +25,22 @@
 % - 
 
 \documentclass[oneside]{book}  % {{{1
-\usepackage{lmodern, microtype}              % margins, fonts, etc
-\usepackage[T1]{fontenc}                     % ""
-\usepackage{calc, etoolbox, nameref, xspace} % utilities
-\usepackage{booktabs, enumitem}              % typesetting
-\usepackage{datetime2}                       % use YYYY-MM-DD for \today
-\usepackage{hyperref}                        % pdf links
-\usepackage{amsmath}                         % misc math
+\usepackage{lmodern, microtype}  % margins, fonts, etc
+\usepackage[T1]{fontenc}         % ""
+\usepackage{calc, etoolbox, nameref, xkeyval, xspace} % utilities
+\usepackage{booktabs, enumitem}  % typesetting
+\usepackage{datetime2}           % use YYYY-MM-DD for \today
+\usepackage{hyperref}            % pdf links
+\usepackage{amsmath}             % misc math
+
 
 % spacing
 \usepackage[margin=1in]{geometry}
 \setlength{\parskip}{0.5em}
 
+
 \usepackage{chappg}  % page numbering by chapter: <chapter #>-<page #>
+
 
 % headers and footers
 \usepackage{fancyhdr}
@@ -57,6 +60,7 @@
 \renewcommand{\chaptermark}[1]{\markboth{#1}{}}  % don't show chapter number
 \pagestyle{plain}
 
+
 % chapters, sections, etc, and ToC (NB: displaying numbers is disabled)
 \usepackage{titlesec, titletoc}
 \titleformat{\chapter}[display]{\normalfont\bf\Huge}{}{0em}{}
@@ -72,6 +76,7 @@
 % ugly hack: footer normal case, consistent spacing with chapter titles
 \renewcommand{\contentsname}{\vspace{1.25em}\NoCaseChange{Contents}}
 \setcounter{tocdepth}{1}  % don't show subsections and below in ToC
+
 
 % custom commands for chapters of recipes and recipes
 \def\thisrecipe{}  % initialization
@@ -92,6 +97,7 @@
 } } }
 \NewDocumentCommand{\erecipe}{mm}{\ExternalToCEntry{#1}{#2}}  % external recipe
 
+
 % index
 \usepackage{imakeidx}
 \makeindex[
@@ -100,6 +106,7 @@
   title={\texorpdfstring{\vspace{1.25em}\NoCaseChange{Index}\vspace{0.4em}}{Index}},
   options=-s my-index,
 ]
+
 
 % lists
 \renewcommand*{\arraystretch}{1.25}
@@ -135,6 +142,7 @@
 \setlist[recipelist]{recipelistStyle}
 \newcommand{\itemNL}{\item[] \hspace{-\labelsep}}  % item with no label
 
+
 % custom commands
 \renewcommand{\epsilon}{\varepsilon}
 \renewcommand{\phi}{\varphi}
@@ -143,6 +151,7 @@
 \newcommand{\degF}{\textdegree F\xspace}
 \newcommand{\about}{$\sim$}
 
+
 % custom environments
 \usepackage{multicol, paracol}  % multicolumn environments
 \setlength{\multicolsep}{\parskip}
@@ -150,9 +159,22 @@
   {\begin{multicols}{2} \raggedcolumns}{\end{multicols}}
 \NewDocumentEnvironment{IT}{O{0.844}}  %  [<col ratio>], ingredients/timeline
   {\columnratio{#1} \begin{paracol}{2}}{\end{paracol}}
-\NewDocumentEnvironment{ingredients}{O{Ingredients}}
-  {\subsection{#1} \begin{ingredientslist}}
-  {\end{ingredientslist}}
+
+\ExplSyntaxOn
+\keys_define:nn{ingredients} {
+  title  .tl_set:N  = \ingrTitle,
+  title  .initial:n = Ingredients,
+  serves .tl_set:N  = \ingrServes,
+}
+\NewDocumentEnvironment{ingredients}{O{}} {
+  \group_begin:
+  \keys_set:nn{ingredients}{#1}
+  \subsection{\ingrTitle \tl_if_empty:NF \ingrServes {~(serves~\ingrServes)}}
+  \begin{ingredientslist}
+  }
+  {\end{ingredientslist}\group_end:}
+\ExplSyntaxOff
+
 \NewDocumentEnvironment{timeline}{O{Timeline}}
   {\subsection{#1} \begin{timelinelist}}
   {\end{timelinelist}}
@@ -166,6 +188,7 @@
 \NewDocumentEnvironment{directions1col}{O{Directions}}
   {\subsection{#1} \begin{directionslist}}
   {\end{directionslist}}
+
 
 % sources
 \NewDocumentCommand{\esource}{mo}{#1\IfNoValueF{#2}{ p#2}\xspace}
