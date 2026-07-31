@@ -21,7 +21,7 @@ custom commands and environments for typesetting recipes.
 
 | Environment                                                                            | Description                                                           |
 | ---                                                                                    | ---                                                                   |
-| `\begin{ingredients}[alt title]`                                                       | list of ingredients, default title is "Ingredients"                   |
+| `\begin{ingredients}[title=<alt title>, serves=n]`                                                       | list of ingredients, default title is "Ingredients"                   |
 | `\begin{timeline}[alt title]`                                                          | timeline list, default title is "Timeline"                            |
 | `\begin{IT}[<col ratio>]`                                                              | ingredients and timeline in two asymmetric columns                    |
 | `\begin{directions}[alt title]`                                                        | list of directions in two even columns, default title is "Directions" |
